@@ -86,43 +86,43 @@ def connectTCP(ser, host, port):
     #     print "response", ser.inWaiting()
     # debug("connctTCP() retured:\n" + response)
     return response
-
-def sendHTTPRequest(ser, host, request, data):
-    ser.write('AT+SAPBR=3,1,"Contype","GPRS"\n')
-    time.sleep(1)
-    ser.write('AT+SAPBR =1,1 \n')
-    time.sleep(1)
-    ser.write('AT+SAPBR=2,1 \n')
-    time.sleep(1)
-    ser.write('AT+HTTPINIT \n')
-    time.sleep(1)
-    ser.write('AT+HTTPPARA="CID",1 \n')
-    time.sleep(1)
-    ser.write('AT+HTTPPARA="URL","http://{}{}"\n'.format(host, request))
-    time.sleep(1)
-    ser.write('AT+HTTPPARA="CONTENT","application/json" \n')
-    time.sleep(1)
-    import json
-    data = json.dumps(data)
-    len_data = len(data)
-    print len_data, data
-    ser.write('AT+HTTPDATA=300,5000 \n'.format(len_data))
-    time.sleep(2)
-    ser.write(data)
-    time.sleep(5)
-    data_response = ser.write('AT+HTTPACTION=1 \n')
-    # while ser.inWaiting() > 0:
-    #     data += ser.read(ser.inWaiting())
-    #     time.sleep(1)
-    print data_response
-    #request = "POST /location HTTP/1.1\r\n" \
-    #"Host: " + host + "\r\n" \
-    #"Content-Type: application/json\r\n" \
-    #"Content-Length: 16\r\n\r\n" \
-    #"{\"datos\":\"data\"}"
-    #print request, len(request)
-    #ser.write(request + chr(26))  # data<^Z>
-    #time.sleep(2)
+MAX_TRIES = 5
+def sendHTTPRequest(ser, host, request, data, tries=0):
+    try:
+        ser.write('AT+SAPBR=3,1,"Contype","GPRS"\n')
+        time.sleep(1)
+        ser.write('AT+SAPBR =1,1 \n')
+        time.sleep(1)
+        ser.write('AT+SAPBR=2,1 \n')
+        time.sleep(1)
+        ser.write('AT+HTTPINIT \n')
+        time.sleep(1)
+        data += ser.write('AT+HTTPPARA="CID",1 \n')
+        time.sleep(1)
+        data += ser.write('AT+HTTPPARA="URL","http://{}{}"\n'.format(host, request))
+        time.sleep(1)
+        data += ser.write('AT+HTTPPARA="CONTENT","application/json" \n')
+        time.sleep(1)
+        import json
+        data = json.dumps(data)
+        len_data = len(data)
+        print len_data, data
+        data += ser.write('AT+HTTPDATA=300,5000 \n'.format(len_data))
+        time.sleep(2)
+        data += ser.write(data)
+        time.sleep(5)
+        data += ser.write('AT+HTTPACTION=1 \n')
+        # while ser.inWaiting() > 0:
+        #     data += ser.read(ser.inWaiting())
+        #     time.sleep(1)
+        if "ERROR" in data and tries < MAX_TRIES:
+            sendHTTPRequest(ser, host, request, data, tries=tries+1)
+    except Exception as e:
+        if "ERROR" in data and tries < MAX_TRIES:
+            sendHTTPRequest(ser, host, request, data, tries=tries + 1)
+        else:
+            return None
+    return None
 
 def closeTCP(ser, showResponse = False):
     ser.write("AT+CIPCLOSE=1\r")

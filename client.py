@@ -23,32 +23,25 @@ P_BUTTON = 7 # adapt to your wiring
 #resetModem()
 from SerialX import SerialX
 
-#if not isReady(ser):
-#    print "Modem not ready."
-#    sys.exit(0)
-    
-#print "Connecting to GSM net..."
-
-#print "Connecting to TCP server..."
-#print reply
-#if "CONNECT" not in reply or "OK" not in reply :
-#    print "Connection failed"
-#    #sys.exit(0)
-
-#
-def read_last_location(last_line):
-    if last_line:
-        fields = last_line.split(",")
-        if len(fields) < 6:
-            return None
-        data = {}
+MAX_TRYES = 5
+def read_location(ser, tryes=0):
+    gps_data = getGPS(ser)
+    gps_data = gps_data.replace("+CGNSINF:", "").strip()
+    data = {}
+    fields = gps_data.split(",")
+    if len(fields) >=6:
         for key, value in  Loc.__dict__.iteritems():
             if "__" not in key:
                 try:
                     data[key] = fields[value]
                 except IndexError:
                     data[key] =  None
-        return data
+
+    if data.get("latitude", "").strip() != "" and  data.get("longitude", "").strip() != "":
+        new_data = {"lng": data.get("longitude"), "lat": data.get("latitude"), "id_code": "Ax34b9"}
+        return new_data
+    if tryes < MAX_TRYES:
+        return read_location(ser, tryes+1)
     return None
 
 while True:
@@ -56,20 +49,12 @@ while True:
         ser = SerialX(SERIAL_PORT, baudrate=115200, timeout=5)
         connectGSM(ser, APN)
         reply = connectTCP(ser, HOST, PORT)
-        gps_data = getGPS(ser)
-        gps_data = gps_data.replace("+CGNSINF:", "").strip()
         new_data = {}
-        data = read_last_location(gps_data)
+        data = read_location(ser)
         if not data:
             raise Exception("Coordenadas incompletas")
 
-        if data.get('longitude') == "" and data.get('latitude') == "":
-            raise Exception("Noo hay coordenadas")
-        new_data["lng"] = data.get("longitude")
-        new_data["lat"] = data.get("latitude")
-        new_data["id_code"] = "Ax34b9"
         sendHTTPRequest(ser, HOST, "/location", new_data)
-        #closeTCP(ser)
         ser.close()
         time.sleep(30)
     except Exception as e:
