@@ -36,13 +36,10 @@ from SerialX import SerialX
 #    #sys.exit(0)
 
 #
-def read_last_location():
-    f = open('./file.txt', 'r')
-    lines = f.readlines()
-    if lines:
-        last_line =  lines[-1:][0]
-        fields = last_line.split(" ")
-        if len(fields) < 20:
+def read_last_location(last_line):
+    if last_line:
+        fields = last_line.split(",")
+        if len(fields) < 6:
             return None
         data = {}
         for key, value in  Loc.__dict__.iteritems():
@@ -60,17 +57,23 @@ while True:
         connectGSM(ser, APN)
         reply = connectTCP(ser, HOST, PORT)
         gps_data = getGPS(ser)
-        data = read_last_location()
+        gps_data = gps_data.replace("+CGNSINF:", "").strip()
         new_data = {}
+        data = read_last_location(gps_data)
+        if not data:
+            raise Exception("Coordenadas incompletas")
+
+        if data.get('longitude') == "" and data.get('latitude') == "":
+            raise Exception("Noo hay coordenadas")
         new_data["lng"] = data.get("longitude")
         new_data["lat"] = data.get("latitude")
         new_data["id_code"] = "Ax34b9"
         sendHTTPRequest(ser, HOST, "/location", new_data)
-        time.sleep(60)
+        #closeTCP(ser)
         ser.close()
+        time.sleep(30)
     except Exception as e:
         print e
-        closeTCP(ser)
         ser.close()
         time.sleep(5)
         continue 
