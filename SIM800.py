@@ -34,7 +34,7 @@ def isReady(ser):
     # Resetting to defaults
     cmd = 'AT\r'
     debug("Cmd: " + cmd)
-    ser.write(cmd)
+    print ser.write(cmd)
     time.sleep(2)
     reply = ser.read(ser.inWaiting())
     time.sleep(8) # Wait until connected to net
@@ -45,7 +45,7 @@ def isReady(ser):
 
 def getGPS(ser):
     print "GPS"
-    ser.write('AT+CGNSPWR=1\n')
+    print ser.write('AT+CGNSPWR=1\n')
     time.sleep(5)
     print ser.readline()
     data = ""

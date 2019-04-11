@@ -21,7 +21,8 @@ P_BUTTON = 7 # adapt to your wiring
 #setup()
 #print "Resetting modem..."
 #resetModem()
-ser = serial.Serial(SERIAL_PORT, baudrate = 115200, timeout=5)
+from SerialX import SerialX
+ser = SerialX(SERIAL_PORT, baudrate = 115200, timeout=5)
 
 #if not isReady(ser):
 #    print "Modem not ready."
