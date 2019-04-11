@@ -77,7 +77,7 @@ def connectGSM(ser, apn):
 
 def connectTCP(ser, host, port):
     cmd = 'AT+CIPSTART="TCP","' + host + '","' + str(port) + '"\r'
-    ser.write(cmd)
+    response = ser.write(cmd)
     time.sleep(1)
     # response = ""
     # while ser.inWaiting() > 0:

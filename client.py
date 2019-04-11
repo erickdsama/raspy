@@ -70,6 +70,7 @@ while True:
         ser.close()
     except Exception as e:
         print e
+        closeTCP(ser)
         ser.close()
         time.sleep(5)
         continue 
