@@ -22,18 +22,15 @@ P_BUTTON = 7 # adapt to your wiring
 #print "Resetting modem..."
 #resetModem()
 from SerialX import SerialX
-ser = SerialX(SERIAL_PORT, baudrate = 115200, timeout=5)
 
 #if not isReady(ser):
 #    print "Modem not ready."
 #    sys.exit(0)
     
 #print "Connecting to GSM net..."
-connectGSM(ser, APN)
 
 #print "Connecting to TCP server..."
-reply = connectTCP(ser, HOST, PORT)
-#print reply 
+#print reply
 #if "CONNECT" not in reply or "OK" not in reply :
 #    print "Connection failed"
 #    #sys.exit(0)
@@ -57,24 +54,20 @@ def read_last_location():
         return data
     return None
 
-print "Connection established. Sending data..."
 while True:
     try:
-    #if GPIO.input(P_BUTTON) == GPIO.LOW:
-    #    msg = "Button pressed"
-    #else:
-    #    msg = "Buttoreleased"
-    #k = len(msg) # do not exceed value returned by AT+CIPSEND? (max 1460)
-        print "que pedo "
-        getGPS(ser)
+        ser = SerialX(SERIAL_PORT, baudrate=115200, timeout=5)
+        connectGSM(ser, APN)
+        reply = connectTCP(ser, HOST, PORT)
+        gps_data = getGPS(ser)
         data = read_last_location()
         new_data = {}
         new_data["lng"] = data.get("longitude")
         new_data["lat"] = data.get("latitude")
         new_data["id_code"] = "Ax34b9"
-    # data = {"lat":"30.4050", "lng": "-130.42323", "id_code":"Ax34b9"}
-        sendHTTPRequest(ser, HOST, "/location", new_data) 
+        sendHTTPRequest(ser, HOST, "/location", new_data)
         time.sleep(60)
+        ser.close()
     except Exception as e:
         print e
         ser.close()

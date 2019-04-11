@@ -44,25 +44,12 @@ def isReady(ser):
 
 
 def getGPS(ser):
-    print "GPS"
     print ser.write('AT+CGNSPWR=1\n')
     time.sleep(5)
-    print ser.readline()
     data = ""
 
-    ser.flushInput()
-    ser.flushOutput()
-    out=''
-    prev='101001011'
-    ser.write('AT+CGNSINF\n')
-    print "Aqi", ser.readline()
-    while True:
-        out += str(ser.read(1))
-        if "\n" in out:
-            print out
-            return out
-        prev = out
-
+    gps_data = ser.write('AT+CGNSINF\n')
+    return gps_data
     #if ser.inWaiting:
    #     data += ser.read(ser.inWaiting())
    #     time.sleep(1)
@@ -71,39 +58,33 @@ def getGPS(ser):
 def connectGSM(ser, apn):
     # Login to APN, no userid/password needed
     cmd = 'AT+CSTT="' + apn + '"\r'
-    debug("Cmd: " + cmd)
-    ser.write(cmd)
+    CSTT = ser.write(cmd)
     time.sleep(3)
-
-    reply = ser.read(ser.inWaiting())
-    print reply
     # Bringing up network
     cmd = "AT+CIICR\r"
     debug("Cmd: " + cmd)
-    ser.write(cmd)
+    CIICR = ser.write(cmd)
     time.sleep(5)
-
     # Getting IP address
     cmd = "AT+CIFSR\r"
     debug("Cmd: " + cmd)
-    ser.write(cmd)
+    CIFSR = ser.write(cmd)
     time.sleep(3)
-
     # Returning all messages from modem
-    reply = ser.read(ser.inWaiting())
-    debug("connectGSM() retured:\n" + reply)
-    return reply
+    # reply = ser.read(ser.inWaiting())
+    # debug("connectGSM() retured:\n" + reply)
+    return CSTT + CIICR + CIICR
 
 def connectTCP(ser, host, port):
     cmd = 'AT+CIPSTART="TCP","' + host + '","' + str(port) + '"\r'
     ser.write(cmd)
     time.sleep(1)
-    response = ""
-    while ser.inWaiting() > 0:
-        response += ser.read(ser.inWaiting())
-        time.sleep(1)
-        print "response", ser.inWaiting()
-    debug("connctTCP() retured:\n" + response)
+    # response = ""
+    # while ser.inWaiting() > 0:
+    #     response += ser.read(ser.inWaiting())
+    #     time.sleep(1)
+    #     print "response", ser.inWaiting()
+    # debug("connctTCP() retured:\n" + response)
     return response
 
 def sendHTTPRequest(ser, host, request, data):
@@ -129,12 +110,11 @@ def sendHTTPRequest(ser, host, request, data):
     time.sleep(2)
     ser.write(data)
     time.sleep(5)
-    ser.write('AT+HTTPACTION=1 \n')
-    data = ""
-    while ser.inWaiting() > 0:
-        data += ser.read(ser.inWaiting())
-        time.sleep(1)
-    print data
+    data_response = ser.write('AT+HTTPACTION=1 \n')
+    # while ser.inWaiting() > 0:
+    #     data += ser.read(ser.inWaiting())
+    #     time.sleep(1)
+    print data_response
     #request = "POST /location HTTP/1.1\r\n" \
     #"Host: " + host + "\r\n" \
     #"Content-Type: application/json\r\n" \
@@ -146,10 +126,6 @@ def sendHTTPRequest(ser, host, request, data):
 
 def closeTCP(ser, showResponse = False):
     ser.write("AT+CIPCLOSE=1\r")
-    reply = ser.read(ser.inWaiting())
-    debug("closeTCP() retured:\n" + reply)
-    if showResponse:
-        print "Server reponse:\n" + reply[(reply.index("SEND OK") + 9):]
     time.sleep(2)
 
 def getIPStatus(ser):
