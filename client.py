@@ -41,25 +41,28 @@ def read_location(ser, tryes=0):
         new_data = {"lng": data.get("longitude"), "lat": data.get("latitude"), "id_code": "Ax34b9"}
         return new_data
     if tryes < MAX_TRYES:
+        time.sleep(2)
         return read_location(ser, tryes+1)
     return None
-
+ser = None
+togglePower()
+time.sleep(5)
 while True:
     try:
         ser = SerialX(SERIAL_PORT, baudrate=115200, timeout=5)
         connectGSM(ser, APN)
         reply = connectTCP(ser, HOST, PORT)
-        new_data = {}
-        data = read_location(ser)
-        if not data:
+        new_data = read_location(ser)
+        if not new_data:
             raise Exception("Coordenadas incompletas")
 
         sendHTTPRequest(ser, HOST, "/location", new_data)
         ser.close()
-        time.sleep(30)
+        time.sleep(300)
     except Exception as e:
         print e
-        ser.close()
+        if ser:
+            ser.close()
         time.sleep(5)
         continue 
  #   closeTCP(ser)
