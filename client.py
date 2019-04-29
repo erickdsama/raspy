@@ -6,25 +6,16 @@ from SIM800 import *
 from service import Loc
 import RPi.GPIO as GPIO
 
-APN = "CMNET"
-#HOST = "5.149.19.125"
-HOST = "location-rwas-api.herokuapp.com"
-PORT = "80"
-#SERIAL_PORT = "/dev/ttyS"  # Raspberry Pi 2
-SERIAL_PORT = "/dev/ttyS0"    # Raspberry Pi 3
-P_BUTTON = 7 # adapt to your wiring
+APN = "CMNET" 
+HOST = "location-rwas-api.herokuapp.com" # Web service
+PORT = "80" # Puerto 
+SERIAL_PORT = "/dev/ttyS0"    # Raspberry Pi Zero
+P_BUTTON = 7 # GPIO para encender Waveshareg
 
-#def setup():
-#    GPIO.setmode(GPIO.BOARD)
-#    GPIO.setup(P_BUTTON, GPIO.IN, GPIO.PUD_UP)
-#
-#setup()
-#print "Resetting modem..."
-#resetModem()
 from SerialX import SerialX
 
-MAX_TRYES = 5
-def read_location(ser, tryes=0):
+MAX_TRIES = 5 # numero maximo de intentos 
+def read_location(ser, tries=0):
     gps_data = getGPS(ser)
     gps_data = gps_data.replace("+CGNSINF:", "").strip()
     data = {}
@@ -36,46 +27,35 @@ def read_location(ser, tryes=0):
                     data[key] = fields[value]
                 except IndexError:
                     data[key] =  None
-
+    # revisar que las coordenadas sean en el formato correcto 
     if data.get("latitude", "").strip() != "" and  data.get("longitude", "").strip() != "":
         new_data = {"lng": data.get("longitude"), "lat": data.get("latitude"), "id_code": "Ax34b9"}
         return new_data
-    if tryes < MAX_TRYES:
+    if tries < MAX_TRIES:
         time.sleep(2)
-        return read_location(ser, tryes+1)
+        return read_location(ser, tries+1)
     return None
+
+
 ser = None
 togglePower()
 time.sleep(5)
+
 while True:
     try:
         ser = SerialX(SERIAL_PORT, baudrate=115200, timeout=5)
-        connectGSM(ser, APN)
-        reply = connectTCP(ser, HOST, PORT)
-        new_data = read_location(ser)
+        connectGSM(ser, APN)  # conectar a la red GSM
+        reply = connectTCP(ser, HOST, PORT)  # conectar al servidor
+        new_data = read_location(ser) # intentar leer  las coordenadas
         if not new_data:
             raise Exception("Coordenadas incompletas")
 
-        sendHTTPRequest(ser, HOST, "/location", new_data)
+        sendHTTPRequest(ser, HOST, "/location", new_data) # enviar las coordenadas al servicio web
         ser.close()
-        time.sleep(300)
+        time.sleep(300) # intervalo entre lectura de coordenadas
     except Exception as e:
         print e
         if ser:
             ser.close()
         time.sleep(5)
         continue 
- #   closeTCP(ser)
-#
- #   print "closing "
-  #  import datetime 
-   # t = datetime.datetime.now()
-    #startTime = time.time()
-    #isRunning = True
-    #while time.time() - startTime < 60:
-    #    time.sleep(0.1)
-
-    #ser.write("AT+CIPSEND=" + str(k) +"\r") # fixed length sending
-    #time.sleep(4) # wait for prompt
-    #ser.write(k)
-    #time.sleep(4)

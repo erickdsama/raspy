@@ -5,21 +5,10 @@ import time
 
 VERBOSE = True
 P_POWER = 7 # Power pin
-P_RESET = 12 # Reset pin
 
 def debug(text):
     if VERBOSE:
         print "Debug:---", text
-
-def resetModem():
-    GPIO.setmode(GPIO.BOARD)
-    GPIO.setup(P_RESET, GPIO.OUT)
-    GPIO.output(P_RESET, GPIO.LOW)
-    time.sleep(0.5)
-    GPIO.output(P_RESET, GPIO.HIGH)
-    time.sleep(0.5)
-    GPIO.output(P_RESET, GPIO.LOW)
-    time.sleep(3)
 
 
 print "POWER BOARD", GPIO.BOARD
@@ -36,19 +25,6 @@ def togglePower():
     time.sleep(3)
     
 
-def isReady(ser):
-    # Resetting to defaults
-    cmd = 'AT\r'
-    debug("Cmd: " + cmd)
-    print ser.write(cmd)
-    time.sleep(2)
-    reply = ser.read(ser.inWaiting())
-    time.sleep(8) # Wait until connected to net
-    return ("OK" in reply)
-
-
-
-
 def getGPS(ser):
     print ser.write('AT+CGNSPWR=1\n')
     time.sleep(5)
@@ -56,10 +32,7 @@ def getGPS(ser):
 
     gps_data = ser.write('AT+CGNSINF\n')
     return gps_data
-    #if ser.inWaiting:
-   #     data += ser.read(ser.inWaiting())
-   #     time.sleep(1)
-   # print "dataaaa", data
+
 
 def connectGSM(ser, apn):
     # Login to APN, no userid/password needed
@@ -85,13 +58,9 @@ def connectTCP(ser, host, port):
     cmd = 'AT+CIPSTART="TCP","' + host + '","' + str(port) + '"\r'
     response = ser.write(cmd)
     time.sleep(1)
-    # response = ""
-    # while ser.inWaiting() > 0:
-    #     response += ser.read(ser.inWaiting())
-    #     time.sleep(1)
-    #     print "response", ser.inWaiting()
-    # debug("connctTCP() retured:\n" + response)
     return response
+
+
 MAX_TRIES = 5
 def sendHTTPRequest(ser, host, request, data, tries=0):
     if True:
@@ -118,17 +87,7 @@ def sendHTTPRequest(ser, host, request, data, tries=0):
         data = ser.write(data)
         time.sleep(5)
         data += ser.write('AT+HTTPACTION=1 \n')
-        # while ser.inWaiting() > 0:
-        #     data += ser.read(ser.inWaiting())
-        #     time.sleep(1)
-        #if "ERROR" in data and tries < MAX_TRIES:
-        #    sendHTTPRequest(ser, host, request, data, tries=tries+1)
-    #except Exception as e:
-    #    if tries < MAX_TRIES:
-    #        sendHTTPRequest(ser, host, request, data, tries=tries + 1)
-    #    else:
-    #        return None
-    #return None
+
 
 def closeTCP(ser, showResponse = False):
     ser.write("AT+CIPCLOSE=1\r")
